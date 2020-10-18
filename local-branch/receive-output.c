@@ -89,13 +89,8 @@ void* printThread() {
     }
 }
 
-void printThread_init(pthread_mutex_t *pmutex, pthread_cond_t *pOkToPrint, List* pPrintList)
+void printThread_init()
 {
-    // store the parameters in the pointers that were initialized at the beginning
-    s_pmutex = pmutex;
-    s_pOkToPrint = pOkToPrint;
-    s_pPrintList = pPrintList;
-
     pthread_create(&threadPrint, NULL, printThread, NULL);
 }
 

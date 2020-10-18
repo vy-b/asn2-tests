@@ -21,7 +21,7 @@ static pthread_mutex_t s_mutex = PTHREAD_MUTEX_INITIALIZER;
 int main(int argc, char* argv[]) {
     List* SendList = List_create();
     List* PrintList = List_create();
-	int socketDescriptor = socket_init();
+	
 
 	// checks if there are 4 arguments when the program is initialized in terminal
 	if (argc != 4) {
@@ -31,18 +31,19 @@ int main(int argc, char* argv[]) {
 	char* portName = argv[3];
 	int portNumber = atoi(portName);
 	
-	
+	char* myPortName = argv[1];
+	int myPortNumber = atoi(myPortName);
 	struct hostent *remoteHost = gethostbyname(argv[2]);
 	char* remoteHostAddr = remoteHost->h_addr_list[0];
 	int remoteHostSize = remoteHost->h_length;
 	
-	
+	int socketDescriptor = socket_init(&myPortNumber);
 	sendVariables_init(&s_mutex, &s_OkToSend, SendList, &socketDescriptor, remoteHostAddr, &portNumber, &remoteHostSize);
-
+	receiveVariables_init(&s_mutex, &s_OkToPrint, PrintList, &socketDescriptor, remoteHostAddr, &portNumber, &remoteHostSize);
 	inputThread_init();
 	sendThread_init();
-	receiveThread_init(&s_mutex, &s_OkToPrint, PrintList, &socketDescriptor);
-	printThread_init(&s_mutex,&s_OkToPrint, PrintList);
+	receiveThread_init();
+	printThread_init();
 
 
 	sendThread_shutdown();
