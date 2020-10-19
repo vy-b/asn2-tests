@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
 	// checks if there are 4 arguments when the program is initialized in terminal
 	if (argc != 4) {
-	    perror("usage: ./s-talk myPortNumber RemoteMachineName RemotePort\n");
+	    perror("usage: ./s-talk myPort RemoteMachineName RemotePort\n");
 	    exit(EXIT_FAILURE);
 	}
 	char* portName = argv[3];
@@ -36,33 +36,23 @@ int main(int argc, char* argv[]) {
 	char* myPortName = argv[1];
 	int myPortNumber = atoi(myPortName);
 
-	struct hostent *remoteHost = gethostbyname(argv[2]);
-	if (remoteHost == NULL){
-		printf("addr not found\n");
-	}
-	char* remoteHostAddr = remoteHost->h_addr_list[0];
-	int remoteHostSize = remoteHost->h_length;
+	char* remoteHostName = argv[2];
+	
 
 	// for debugging----------------------------------------
-	struct in_addr a; // for debug delete later
-	while (*remoteHost->h_addr_list)
-    {
-        bcopy(*remoteHost->h_addr_list++, (char *) &a, sizeof(a));
-        printf("address: %s\n", inet_ntoa(a));
-    }
+	
 	printf("myPortNumber: %d\n",myPortNumber);
 	printf("remote port number: %d\n", portNumber);
 	printf("remoteHostName: %s\n", argv[2]);
 	// for debugging --------------------------------------------
 
 	int socketDescriptor = socket_init(&myPortNumber);
-	sendVariables_init(&s_mutex, &s_OkToSend, SendList, &socketDescriptor, remoteHostAddr, &portNumber, &remoteHostSize);
-	receiveVariables_init(&s_mutex, &s_OkToPrint, PrintList, &socketDescriptor, remoteHostAddr, &portNumber, &remoteHostSize);
+	sendVariables_init(&s_mutex, &s_OkToSend, SendList, &socketDescriptor, remoteHostName, &portNumber);
 
 	inputThread_init();
 	sendThread_init();
-	receiveThread_init();
-	printThread_init();
+	receiveThread_init(&s_mutex, &s_OkToPrint, PrintList, &socketDescriptor);
+	printThread_init(&s_mutex, &s_OkToPrint, PrintList);
 
 
 	sendThread_shutdown();

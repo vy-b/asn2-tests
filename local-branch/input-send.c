@@ -13,6 +13,9 @@ signals send thread when input has been added and ready to send
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #define MSG_MAX_LEN 1024
 #define PORT 22110
 
@@ -21,9 +24,8 @@ static pthread_cond_t *s_pOkToSend;
 static pthread_mutex_t *s_pmutex;
 static List* s_pSendList;
 
-static char* s_pRemoteHostAddr;
+static char* s_pRemoteHostName;
 static int* s_pportNumber;
-static int* s_pRemoteHostSize;
 
 pthread_t threadInput;
 pthread_t threadSend;
@@ -59,7 +61,14 @@ void* inputThread(){
 
 // takes item off sendlist and send
 void* sendThread(){
+	printf("sendstart\n");
+	struct hostent *remoteHost = gethostbyname(s_pRemoteHostName);
+	if (remoteHost == NULL){
+		printf("addr not found\n");
+	}
 	while(1){
+		
+		printf("sendstart while loop\n");
 		//after creating sockets, wait for signal to send (wait for item to be added to list)
 		pthread_mutex_lock(s_pmutex);
 		{
@@ -78,11 +87,16 @@ void* sendThread(){
 
 		//socket address of receiver (remote address)
 		struct sockaddr_in sinRemote;
-		memset(&sinRemote, 0, sizeof(sinRemote));
+		// memset(&sinRemote, 0, sizeof(sinRemote));
 		sinRemote.sin_family = AF_INET; //IPv4 - don't need to implement IPv6
-		memcpy(&sinRemote.sin_addr.s_addr, &s_pRemoteHostAddr, *s_pRemoteHostSize);
+		memcpy(&sinRemote.sin_addr, remoteHost->h_addr_list[0], remoteHost->h_length);
+		// sinRemote.sin_addr.s_addr = INADDR_ANY;
 		sinRemote.sin_port = htons(*s_pportNumber);
-		
+
+		char buffer[INET_ADDRSTRLEN];
+		inet_ntop( AF_INET, &sinRemote.sin_addr, buffer, sizeof( buffer ));
+		printf( "send address:%s\n", buffer );
+
 		if ( sendto(*s_socket, toSend, MSG_MAX_LEN,0, (struct sockaddr*) &sinRemote, sizeof(sinRemote)) < 0 ) {
 			perror("writing to socket failed\n");
 			exit(EXIT_FAILURE);
@@ -113,14 +127,13 @@ void sendThread_shutdown()
 }
 
 void sendVariables_init(pthread_mutex_t *pmutex, pthread_cond_t *pOkToSend, 
-    List* pSendList, int* socketDescriptor, char* pRemoteHostAddr, int* pportNumber, int* pRemoteHostSize){
+    List* pSendList, int* socketDescriptor, char* pRemoteHostName, int* pportNumber){
 	// store the parameters in the pointers that were init at the beginning
     // of this file
     s_pmutex = pmutex;
     s_pOkToSend = pOkToSend;
     s_pSendList = pSendList;
 	s_socket = socketDescriptor;
-	s_pRemoteHostAddr = pRemoteHostAddr;
+	s_pRemoteHostName = pRemoteHostName;
 	s_pportNumber = pportNumber;
-	s_pRemoteHostSize = pRemoteHostSize;
 }

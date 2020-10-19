@@ -4,14 +4,12 @@
 #include <pthread.h>
 #include "list.h"
 
-void printThread_init();
+void printThread_init(pthread_mutex_t *pmutex, pthread_cond_t *pOkToPrint, List* pPrintList);
 void printThread_shutdown();
 
-void receiveThread_init();
+void receiveThread_init(pthread_mutex_t *pmutex, pthread_cond_t *pOkToPrint, 
+    List* pPrintList, int* socketDescriptor);
 
 void receiveThread_shutdown();
-
-void receiveVariables_init(pthread_mutex_t *pmutex, pthread_cond_t *pOkToPrint, 
-    List* pPrintList, int* socketDescriptor, char* pRemoteHostAddr, int* pportNumber, int* pRemoteHostSize);
 
 #endif
