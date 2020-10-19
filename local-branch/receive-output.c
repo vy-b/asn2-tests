@@ -9,7 +9,6 @@
 #include <string.h>
 
 #define MSG_MAX_LEN 1024
-#define PORT 22110
 
 //defined in s-talk.c, passed here as pointers
 static pthread_cond_t *s_pOkToPrint;
@@ -27,21 +26,22 @@ static int* s_socket;
 static int flag = 0;
 
 void* receiveThread(){
+    printf("thread works");
 	while(1){
 		// socket address of sender (remote)
 		struct sockaddr_in sinRemote;
 		memset(&sinRemote, 0, sizeof(sinRemote));
-        sinRemote.sin_family = AF_INET; //IPv4 - don't need to implement IPv6
-		memcpy(&sinRemote.sin_addr.s_addr, &s_pRemoteHostAddr, *s_pRemoteHostSize);
-		sinRemote.sin_port = htons(*s_pportNumber);
 		unsigned int sin_len = sizeof(sinRemote);
 
-        char received[MSG_MAX_LEN];
+        printf("thread still works\n");
 
-		if ( recvfrom(*s_socket, received, MSG_MAX_LEN, 0, (struct sockaddr*) &sinRemote, &sin_len) < 0 ) {
+        char received[MSG_MAX_LEN];
+        int bytesRx;
+		if ( (bytesRx = recvfrom(*s_socket, received, MSG_MAX_LEN, 0, (struct sockaddr*) &sinRemote, &sin_len) )!= 0 ) {
 			perror("receiving socket failed\n");
 			exit(EXIT_FAILURE);
 		}
+        printf("received: %d", bytesRx);
 		// entering critical section
 		pthread_mutex_lock(s_pmutex);
         {
@@ -58,7 +58,7 @@ void* receiveThread(){
             pthread_cond_signal(s_pOkToPrint);
         }
         pthread_mutex_unlock(s_pmutex);
-        
+        printf("received: %s", received);
 	}
 	return NULL;
 }
